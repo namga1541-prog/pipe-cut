@@ -222,6 +222,15 @@
   </div>
 
   <div class="card input-card">
+    <h2>③ 필요한 제단 목록</h2>
+    <div class="cuts-head">
+      <div>길이 (mm)</div><div>수량 (개)</div><div></div>
+    </div>
+    <div id="cutRows"></div>
+    <button class="add-btn" id="addRow">＋ 항목 추가</button>
+  </div>
+
+  <div class="card input-card">
     <h2>♻️ 보유 자투리 <span class="opt">(있으면 먼저 소진 — 선택)</span></h2>
     <div class="lo-head">
       <div>길이 (mm)</div><div>수량 (개)</div><div></div>
@@ -260,18 +269,9 @@
         </div>
       </div>
       <div class="tool-result" id="dimResult">절단 길이 <b>—</b></div>
-      <button class="add-btn" id="dimAdd" style="margin-top:10px">③ 제단 목록에 추가 ↓</button>
+      <button class="add-btn" id="dimAdd" style="margin-top:10px">③ 제단 목록에 추가 ↑</button>
     </div>
   </details>
-
-  <div class="card input-card">
-    <h2>③ 필요한 제단 목록</h2>
-    <div class="cuts-head">
-      <div>길이 (mm)</div><div>수량 (개)</div><div></div>
-    </div>
-    <div id="cutRows"></div>
-    <button class="add-btn" id="addRow">＋ 항목 추가</button>
-  </div>
 
   <button class="calc-btn" id="calcBtn">📐 최적 제단 계산</button>
   <div id="inputErr"></div>
