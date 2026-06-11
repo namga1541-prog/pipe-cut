@@ -15,7 +15,7 @@
   :root{
     --bg:#0f1419; --panel:#1a2129; --panel2:#222c36; --line:#33404d;
     --txt:#e8edf2; --sub:#9fb0bf; --accent:#2196f3; --accent2:#1565c0;
-    --ok:#43a047; --warn:#fb8c00; --bad:#e53935;
+    --ok:#43a047; --warn:#fb8c00; --bad:#e53935; --reuse:#26c6da;
     --radius:14px;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
@@ -39,6 +39,7 @@
   }
   .card h2{margin:0 0 12px; font-size:15px; color:var(--accent);
     display:flex; align-items:center; gap:7px;}
+  .card h2 .opt{font-size:11px; color:var(--sub); font-weight:500;}
   label{display:block; font-size:12.5px; color:var(--sub); margin-bottom:5px;}
   input[type=number]{
     width:100%; background:var(--panel2); border:1px solid var(--line);
@@ -60,12 +61,12 @@
   .row2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
   .row3{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
 
-  /* 절단 항목 테이블 */
-  .cuts-head,.cut-row{
+  /* 절단/자투리 항목 테이블 */
+  .cuts-head,.cut-row,.lo-head,.lo-row{
     display:grid; grid-template-columns:1fr 1fr 44px; gap:10px; align-items:center;
   }
-  .cuts-head{font-size:11.5px; color:var(--sub); margin-bottom:6px; padding:0 2px;}
-  .cut-row{margin-bottom:10px;}
+  .cuts-head,.lo-head{font-size:11.5px; color:var(--sub); margin-bottom:6px; padding:0 2px;}
+  .cut-row,.lo-row{margin-bottom:10px;}
   .del-btn{
     background:var(--panel2); border:1px solid var(--line); color:var(--bad);
     border-radius:10px; height:44px; font-size:20px; cursor:pointer; line-height:1;
@@ -77,6 +78,7 @@
     cursor:pointer; margin-top:2px;
   }
   .add-btn:active{background:var(--panel2);}
+  .lo-empty{font-size:12px; color:var(--sub); margin:2px 0 8px;}
 
   .calc-btn{
     width:100%; background:linear-gradient(135deg,var(--accent2),var(--accent));
@@ -93,23 +95,31 @@
     padding:12px 8px; text-align:center;}
   .stat .v{font-size:22px; font-weight:800; line-height:1.1;}
   .stat .k{font-size:11px; color:var(--sub); margin-top:3px;}
-  .stat.ok .v{color:var(--ok);} .stat.warn .v{color:var(--warn);}
+  .stat.ok .v{color:var(--ok);} .stat.warn .v{color:var(--warn);} .stat.reuse .v{color:var(--reuse);}
 
   .bar-block{margin-bottom:14px;}
-  .bar-title{display:flex; justify-content:space-between; align-items:baseline;
+  .bar-title{display:flex; justify-content:space-between; align-items:center; gap:8px;
     font-size:13px; margin-bottom:5px;}
-  .bar-title b{font-size:14px;}
-  .bar-title .waste{color:var(--sub); font-size:12px;}
-  .bar-title .waste.reuse{color:var(--ok); font-weight:600;}
+  .bar-title .lbl{display:flex; align-items:center; gap:7px; min-width:0;}
+  .bar-title b{font-size:14px; white-space:nowrap;}
+  .bar-check{width:18px; height:18px; accent-color:var(--ok); flex:none;}
+  .bin-tag{font-size:10.5px; font-weight:700; padding:2px 7px; border-radius:6px; flex:none;}
+  .bin-tag.fresh{background:var(--accent2); color:#fff;}
+  .bin-tag.left{background:#0e3a3f; color:var(--reuse); border:1px solid var(--reuse);}
+  .bar-title .waste{color:var(--sub); font-size:12px; white-space:nowrap;}
+  .bar-title .waste.reuse{color:var(--reuse); font-weight:600;}
   .bar{display:flex; height:42px; border-radius:9px; overflow:hidden;
-    border:1px solid var(--line); background:#0a0e12;}
+    border:1px solid var(--line); background:#0a0e12; max-width:100%;}
   .seg{display:flex; align-items:center; justify-content:center;
     font-size:12px; font-weight:700; color:#fff; overflow:hidden; white-space:nowrap;
     border-right:1px solid rgba(0,0,0,.35); min-width:0;}
   .seg.scrap{background:repeating-linear-gradient(45deg,#2a333d,#2a333d 6px,#222c36 6px,#222c36 12px);
     color:var(--sub); font-weight:500;}
+  .seg.scrap.reuse{background:repeating-linear-gradient(45deg,#0e3a3f,#0e3a3f 6px,#123743 6px,#123743 12px); color:var(--reuse);}
   .seg.endloss{background:#b71c1c; opacity:.75; border-left:1px solid rgba(0,0,0,.4);}
   .cut-list{font-size:12px; color:var(--sub); margin-top:5px; padding-left:2px;}
+  .cut-pos{font-size:11.5px; color:var(--reuse); margin-top:3px; padding-left:2px;
+    font-variant-numeric:tabular-nums;}
 
   .legend{display:flex; flex-wrap:wrap; gap:8px 14px; margin:4px 0 14px; font-size:12px;}
   .legend span{display:flex; align-items:center; gap:5px;}
@@ -118,10 +128,13 @@
   .note{font-size:12px; color:var(--sub); margin-top:8px;}
   .err{background:#3a1a1a; border:1px solid var(--bad); color:#ffb3b3;
     padding:11px 13px; border-radius:10px; font-size:13px; margin-top:10px;}
-  .actions{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:6px;}
+  .actions{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;}
   .actions button{background:var(--panel2); border:1px solid var(--line); color:var(--txt);
     border-radius:11px; padding:13px; font-size:14px; cursor:pointer;}
   .actions button:active{background:var(--panel);}
+  .actions .full{grid-column:1 / -1;}
+  .reuse-btn{background:#0e3a3f !important; border-color:var(--reuse) !important; color:var(--reuse) !important;
+    font-weight:600;}
 
   @media print{
     body{background:#fff; color:#000; padding:0;}
@@ -130,13 +143,15 @@
     .bar,.seg{-webkit-print-color-adjust:exact; print-color-adjust:exact;}
     .card{border:1px solid #ccc; break-inside:avoid;}
     .stat{border:1px solid #ccc;}
+    .cut-pos{color:#0a6a73;}
+    .bar-check{width:16px; height:16px;}
   }
 </style>
 </head>
 <body>
 <header>
   <h1>🔧 광표반장님 배관 제단 계산기</h1>
-  <p>SUS 짜투리 최소 · 본수 최소 자동 최적화</p>
+  <p>SUS 짜투리 최소 · 신규 본수 최소 · 잔재 우선 소진</p>
 </header>
 
 <div class="wrap">
@@ -157,7 +172,7 @@
   </div>
 
   <div class="card input-card">
-    <h2>② 원자재</h2>
+    <h2>② 원자재 (신규 정척)</h2>
     <div class="row2">
       <div>
         <label>한 본 길이 (mm)</label>
@@ -178,7 +193,17 @@
         <input type="number" id="kerf" value="0" min="0" inputmode="numeric">
       </div>
     </div>
-    <div class="note" id="usableNote">→ 한 본당 실제 사용 가능: <b id="usableLen">5,900mm</b></div>
+    <div class="note" id="usableNote">→ 신규 한 본당 실제 사용 가능: <b id="usableLen">5,900mm</b></div>
+  </div>
+
+  <div class="card input-card">
+    <h2>♻️ 보유 자투리 <span class="opt">(있으면 먼저 소진 — 선택)</span></h2>
+    <div class="lo-head">
+      <div>길이 (mm)</div><div>수량 (개)</div><div></div>
+    </div>
+    <div id="loRows"></div>
+    <div class="lo-empty" id="loEmpty">창고에 남은 자투리가 있으면 추가하세요. 신규 본을 자르기 전에 먼저 씁니다.</div>
+    <button class="add-btn" id="addLo">＋ 자투리 추가</button>
   </div>
 
   <div class="card input-card">
@@ -201,8 +226,10 @@
     <div id="bars"></div>
     <div class="note" id="leftoverNote"></div>
     <div class="actions">
+      <button id="reuseBtn" class="reuse-btn full" style="display:none">♻ 남은 자투리를 재고에 추가</button>
       <button id="printBtn">🖨️ 인쇄 / PDF</button>
-      <button id="saveBtn">💾 입력값 저장</button>
+      <button id="shareBtn">🔗 공유 (카톡)</button>
+      <button id="saveBtn" class="full">💾 입력값 저장</button>
     </div>
   </div>
 
@@ -215,6 +242,7 @@ var COLORS = ['#2196f3','#43a047','#fb8c00','#ab47bc','#26c6da','#ec407a',
               '#7e57c2','#66bb6a','#ffa726','#5c6bc0','#26a69a','#d4537a'];
 var DIAMETERS = ['20A','25A','32A','40A','50A','65A','80A','90A','100A','125A','150A','200A'];
 var SCHEDULES = [10,20,30,40];
+var lastReusable = []; // 직전 계산에서 나온 재사용 가능 자투리 [{len,qty}]
 
 function fillSelects(){
   var dia = document.getElementById('dia');
@@ -232,63 +260,87 @@ function specLabel(){
   return document.getElementById('dia').value + ' · Sch ' + document.getElementById('sch').value;
 }
 
-/* ===== 절단 항목 행 ===== */
-function makeRow(len, qty){
+/* ===== 입력 행 (제단 / 자투리 공용 생성기) ===== */
+function makeRow(cls, lenCls, qtyCls, len, qty, onDel){
   var row = document.createElement('div');
-  row.className = 'cut-row';
+  row.className = cls;
   var l = document.createElement('input');
   l.type='number'; l.min='1'; l.inputMode='numeric'; l.placeholder='예: 1500';
-  l.className='cut-len'; if(len!=null) l.value=len;
+  l.className=lenCls; if(len!=null) l.value=len;
   var q = document.createElement('input');
   q.type='number'; q.min='1'; q.inputMode='numeric'; q.placeholder='예: 6';
-  q.className='cut-qty'; if(qty!=null) q.value=qty;
+  q.className=qtyCls; if(qty!=null) q.value=qty;
   var d = document.createElement('button');
   d.className='del-btn'; d.textContent='×'; d.title='삭제';
-  d.onclick=function(){ row.remove(); };
+  d.onclick=function(){ row.remove(); if(onDel) onDel(); };
   row.appendChild(l); row.appendChild(q); row.appendChild(d);
   return row;
 }
-function addRow(len, qty){ document.getElementById('cutRows').appendChild(makeRow(len,qty)); }
+function addRow(len, qty){
+  document.getElementById('cutRows').appendChild(
+    makeRow('cut-row','cut-len','cut-qty',len,qty));
+}
+function syncLoEmpty(){
+  var has = document.getElementById('loRows').children.length>0;
+  document.getElementById('loEmpty').style.display = has?'none':'block';
+}
+function addLo(len, qty){
+  document.getElementById('loRows').appendChild(
+    makeRow('lo-row','lo-len','lo-qty',len,qty,syncLoEmpty));
+  syncLoEmpty();
+}
 
 /* ===== 입력 읽기 ===== */
+function readRows(sel, lenCls, qtyCls){
+  var out=[]; var rows=document.querySelectorAll(sel);
+  for(var i=0;i<rows.length;i++){
+    var len=parseInt(rows[i].querySelector('.'+lenCls).value,10);
+    var qty=parseInt(rows[i].querySelector('.'+qtyCls).value,10);
+    if(len>0 && qty>0) out.push({len:len, qty:qty});
+  }
+  return out;
+}
 function readInputs(){
   var stockLen = parseInt(document.getElementById('stockLen').value,10);
   var stockQtyRaw = document.getElementById('stockQty').value.trim();
   var stockQty = stockQtyRaw==='' ? Infinity : parseInt(stockQtyRaw,10);
   var kerf = parseInt(document.getElementById('kerf').value,10) || 0;
   var endLoss = parseInt(document.getElementById('endLoss').value,10) || 0;
-  var items = [];
-  var rows = document.querySelectorAll('.cut-row');
-  for(var i=0;i<rows.length;i++){
-    var len = parseInt(rows[i].querySelector('.cut-len').value,10);
-    var qty = parseInt(rows[i].querySelector('.cut-qty').value,10);
-    if(len>0 && qty>0) items.push({len:len, qty:qty});
-  }
-  return {stockLen:stockLen, stockQty:stockQty, kerf:kerf, endLoss:endLoss, items:items};
+  return {
+    stockLen:stockLen, stockQty:stockQty, kerf:kerf, endLoss:endLoss,
+    items: readRows('.cut-row','cut-len','cut-qty'),
+    leftovers: readRows('.lo-row','lo-len','lo-qty')
+  };
 }
 
 /* ===== 최적화 솔버 =====
-   - 각 조각은 (길이 + kerf) 만큼 소요로 보수적 모델링
-   - Best-Fit Decreasing + 무작위 재시작으로 본수 최소화 → 잔재 집중(최대 단일 자투리) 최적화
+   - 각 조각 소요 = 길이 + kerf(톱날)
+   - 보유 자투리(leftover)를 빈으로 미리 깔고 신규 본보다 우선 채움
+   - 점수: 신규 본수 최소 → 동률이면 신규본 최대 자투리(재사용성) 최대
 */
-function packBins(pieces, cap){
-  // pieces: 소요길이 배열, cap: 한 본 용량
-  var bins = []; // 각 bin: {rem, items:[원래길이...]}
+function packBins(pieces, freshCap, leftCaps){
+  var bins=[];
+  for(var i=0;i<leftCaps.length;i++) bins.push({rem:leftCaps[i], cap:leftCaps[i], type:'left', items:[]});
   for(var i=0;i<pieces.length;i++){
-    var p = pieces[i];
-    var best=-1, bestRem=Infinity;
+    var p=pieces[i];
+    var best=-1, bestRem=Infinity, bestRank=9;
     for(var b=0;b<bins.length;b++){
-      var r = bins[b].rem - p.eff;
-      if(r>=0 && r<bestRem){ bestRem=r; best=b; }
+      var r=bins[b].rem - p.eff;
+      if(r<0) continue;
+      var rank = bins[b].type==='left'?0:1; // 자투리 우선
+      if(rank<bestRank || (rank===bestRank && r<bestRem)){ bestRank=rank; bestRem=r; best=b; }
     }
-    if(best<0){ bins.push({rem:cap, items:[]}); best=bins.length-1; }
+    if(best<0){ bins.push({rem:freshCap, cap:freshCap, type:'fresh', items:[]}); best=bins.length-1; }
     bins[best].rem -= p.eff;
     bins[best].items.push(p.len);
   }
-  return bins;
+  var nFresh=0, freshMaxRem=0;
+  for(var b=0;b<bins.length;b++){
+    if(bins[b].type==='fresh'){ nFresh++; if(bins[b].rem>freshMaxRem) freshMaxRem=bins[b].rem; }
+  }
+  return {bins:bins, nFresh:nFresh, freshMaxRem:freshMaxRem};
 }
 function shuffle(a, seed){
-  // 결정적 의사난수(재현 가능) + 인덱스 기반
   var arr = a.slice();
   var s = seed*2654435761 % 2147483647;
   function rnd(){ s = (s*16807) % 2147483647; return s/2147483647; }
@@ -299,50 +351,72 @@ function shuffle(a, seed){
   return arr;
 }
 function solve(cfg){
-  var cap = cfg.stockLen - cfg.endLoss; // 한 본당 실제 사용 가능 길이
-  if(cap<=0) return {error:'본당 손실이 원자재 길이보다 크거나 같습니다.'};
+  var freshCap = cfg.stockLen - cfg.endLoss; // 신규 한 본당 실제 사용 가능
+  if(freshCap<=0) return {error:'본당 손실이 원자재 길이보다 크거나 같습니다.'};
+
   var pieces=[];
   cfg.items.forEach(function(it){
     for(var i=0;i<it.qty;i++) pieces.push({len:it.len, eff:it.len + cfg.kerf});
   });
-  // 단일 조각이 사용 가능 길이보다 길면 불가
-  var tooLong = pieces.filter(function(p){ return p.eff > cap; });
-  if(tooLong.length) return {error:'사용 가능 길이('+cap.toLocaleString()+'mm)보다 긴 제단 항목이 있습니다: '
-    + tooLong.map(function(p){return p.len+'mm';}).join(', ')};
   if(!pieces.length) return {error:'제단 목록을 입력하세요.'};
 
-  // 길이 내림차순 기본 + 무작위 재시작
+  // 보유 자투리: 끝단 손실 없음(이미 절단면) · kerf는 동일 적용
+  var leftCaps=[];
+  cfg.leftovers.forEach(function(it){ for(var i=0;i<it.qty;i++) leftCaps.push(it.len); });
+
+  var maxBin = freshCap;
+  leftCaps.forEach(function(c){ if(c>maxBin) maxBin=c; });
+  var tooLong = pieces.filter(function(p){ return p.eff > maxBin; });
+  if(tooLong.length) return {error:'가장 긴 원자재('+maxBin.toLocaleString()+'mm)보다 긴 제단 항목이 있습니다: '
+    + tooLong.map(function(p){return p.len+'mm';}).join(', ')};
+
   var base = pieces.slice().sort(function(a,b){return b.eff-a.eff;});
   var best=null;
   function consider(order){
-    var bins = packBins(order, cap);
-    // 점수: 본수 최소 우선 → 그다음 최대 단일 자투리(재사용성)
-    var maxRem=0; for(var i=0;i<bins.length;i++) if(bins[i].rem>maxRem) maxRem=bins[i].rem;
-    var sc = {bins:bins, n:bins.length, maxRem:maxRem};
-    if(!best || sc.n<best.n || (sc.n===best.n && sc.maxRem>best.maxRem)) best=sc;
+    var sc = packBins(order, freshCap, leftCaps);
+    if(!best || sc.nFresh<best.nFresh ||
+       (sc.nFresh===best.nFresh && sc.freshMaxRem>best.freshMaxRem)) best=sc;
   }
   consider(base);
   for(var k=1;k<=2500;k++) consider(shuffle(base,k));
 
-  // 본수 제한 체크
-  var overStock = (cfg.stockQty!==Infinity && best.n > cfg.stockQty);
+  // 사용된 빈만 (자투리는 안 쓰면 그대로 재고에 남음)
+  var used = best.bins.filter(function(b){ return b.items.length>0; });
+  var nFresh = best.nFresh;
+  var nLeftUsed = used.filter(function(b){return b.type==='left';}).length;
+  var nLeftTotal = leftCaps.length;
+  var overStock = (cfg.stockQty!==Infinity && nFresh > cfg.stockQty);
+
+  // 재사용 임계 = 가장 짧은 필요 길이 (그보다 길면 다음에 또 쓸 수 있음)
+  var reuseThreshold = Math.min.apply(null, cfg.items.map(function(i){return i.len;}));
 
   // 통계
   var totalNeed=0; pieces.forEach(function(p){ totalNeed+=p.len; });
-  var totalStock = best.n * cfg.stockLen;            // 전체 원자재(6000 기준)
-  var endLossTotal = best.n * cfg.endLoss;           // 끝단 손실 합
-  var kerfTotal = cfg.kerf * pieces.length;          // 톱날 손실 합
-  var cutScrap = (best.n * cap) - totalNeed - kerfTotal; // 절단 짜투리(끝단 제외)
-  if(cutScrap<0) cutScrap=0;
-  var totalScrap = cutScrap + endLossTotal + kerfTotal;  // 전체 버려지는 양
-  var eff = totalNeed/totalStock*100;
+  var kerfTotal = cfg.kerf * pieces.length;
+  var endLossTotal = nFresh * cfg.endLoss;
+  var freshMaterial = nFresh * cfg.stockLen;
+  var wasteScrap=0, reuseList={};
+  used.forEach(function(b){
+    if(b.rem<=0) return;
+    if(b.rem >= reuseThreshold) reuseList[b.rem] = (reuseList[b.rem]||0)+1; // 재사용 가능
+    else wasteScrap += b.rem;                                              // 진짜 버림
+  });
+  var reuseArr = Object.keys(reuseList).map(Number).sort(function(a,b){return b-a;})
+                 .map(function(l){ return {len:l, qty:reuseList[l]}; });
+  var eff = freshMaterial>0 ? (totalNeed - sumUsedLeftLen(used)) / freshMaterial * 100 : 100;
+  if(eff<0) eff=0; if(eff>100) eff=100;
 
   return {
-    bins: best.bins, nBars: best.n, overStock: overStock,
-    stockQty: cfg.stockQty, stockLen: cfg.stockLen, kerf: cfg.kerf, endLoss: cfg.endLoss, cap: cap,
-    totalNeed: totalNeed, cutScrap: cutScrap, endLossTotal: endLossTotal, kerfTotal: kerfTotal,
-    totalScrap: totalScrap, eff: eff, pieceCount: pieces.length
+    bins: used, nFresh: nFresh, nLeftUsed: nLeftUsed, nLeftTotal: nLeftTotal,
+    overStock: overStock, stockQty: cfg.stockQty, stockLen: cfg.stockLen,
+    kerf: cfg.kerf, endLoss: cfg.endLoss, freshCap: freshCap, reuseThreshold: reuseThreshold,
+    totalNeed: totalNeed, wasteScrap: wasteScrap, endLossTotal: endLossTotal,
+    kerfTotal: kerfTotal, eff: eff, pieceCount: pieces.length, reuseArr: reuseArr
   };
+}
+function sumUsedLeftLen(used){
+  var s=0; used.forEach(function(b){ if(b.type==='left') b.items.forEach(function(l){ s+=l; }); });
+  return s;
 }
 
 /* ===== 렌더 ===== */
@@ -365,86 +439,111 @@ function render(res, cfg){
   document.getElementById('specBadge').textContent = specLabel();
 
   // 요약
-  var reuseThreshold = Math.min.apply(null, cfg.items.map(function(i){return i.len;}));
   var summary = document.getElementById('summary');
   summary.innerHTML =
-    '<div class="stat ok"><div class="v">'+res.nBars+'</div><div class="k">필요 본수</div></div>'+
-    '<div class="stat warn"><div class="v">'+res.cutScrap.toLocaleString()+'</div><div class="k">절단 짜투리 (mm)</div></div>'+
-    '<div class="stat"><div class="v">'+res.eff.toFixed(1)+'%</div><div class="k">자재 효율</div></div>';
+    '<div class="stat ok"><div class="v">'+res.nFresh+'</div><div class="k">신규 본수</div></div>'+
+    '<div class="stat reuse"><div class="v">'+res.nLeftUsed+(res.nLeftTotal?(' / '+res.nLeftTotal):'')+'</div><div class="k">잔재 활용 (개)</div></div>'+
+    '<div class="stat warn"><div class="v">'+res.wasteScrap.toLocaleString()+'</div><div class="k">버림 짜투리 (mm)</div></div>';
 
-  // 색상 맵 (길이별) — 정렬해서 일관
+  // 색상 맵 (길이별, 내림차순)
   var lenColorMap={};
-  var lens = {}; res.bins.forEach(function(bin){ bin.items.forEach(function(l){ lens[l]=1; }); });
+  var lens={}; res.bins.forEach(function(bin){ bin.items.forEach(function(l){ lens[l]=1; }); });
   Object.keys(lens).map(Number).sort(function(a,b){return b-a;}).forEach(function(l){ colorOf(l,lenColorMap); });
 
   // 범례
   var legend = document.getElementById('legend');
   legend.innerHTML = Object.keys(lenColorMap).map(Number).sort(function(a,b){return b-a;}).map(function(l){
     return '<span><i style="background:'+lenColorMap[l]+'"></i>'+l.toLocaleString()+'mm</span>';
-  }).join('') + '<span><i style="background:repeating-linear-gradient(45deg,#2a333d,#2a333d 4px,#222c36 4px,#222c36 8px)"></i>짜투리</span>'
+  }).join('')
+    + '<span><i style="background:#0e3a3f;border:1px solid var(--reuse)"></i>재사용 자투리</span>'
+    + '<span><i style="background:repeating-linear-gradient(45deg,#2a333d,#2a333d 4px,#222c36 4px,#222c36 8px)"></i>버림</span>'
     + (res.endLoss>0 ? '<span><i style="background:#b71c1c;opacity:.75"></i>끝단 손실</span>' : '');
 
-  // 본별 막대
+  // 막대 길이 기준(가장 긴 원자재) — 자투리 본은 실제 길이만큼 짧게
+  var maxFull = res.stockLen;
+  res.bins.forEach(function(b){ if(b.type==='left' && b.cap>maxFull) maxFull=b.cap; });
+
   var bars = document.getElementById('bars');
   bars.innerHTML='';
-  res.bins.forEach(function(bin, idx){
-    // 같은 길이끼리 모아서 표시(보기 좋게 내림차순)
+  var freshIdx=0;
+  res.bins.forEach(function(bin){
     var sorted = bin.items.slice().sort(function(a,b){return b-a;});
-    var scrap = bin.rem; // 남은 용량(=실제 자투리, kerf 포함 소요 후)
+    var scrap = bin.rem;
+    var isLeft = bin.type==='left';
+    var fullLen = isLeft ? bin.cap : res.stockLen; // 물리 길이
+    var reuse = scrap >= res.reuseThreshold;
+
     var block = document.createElement('div');
     block.className='bar-block';
 
-    var reuse = scrap >= reuseThreshold;
-    var counts = {};
-    sorted.forEach(function(l){ counts[l]=(counts[l]||0)+1; });
+    var counts={}; sorted.forEach(function(l){ counts[l]=(counts[l]||0)+1; });
     var listTxt = Object.keys(counts).map(Number).sort(function(a,b){return b-a;}).map(function(l){
       return l.toLocaleString()+'mm × '+counts[l];
     }).join('  +  ');
 
+    var titleName = isLeft ? ('잔재 '+bin.cap.toLocaleString()+'mm') : ((++freshIdx)+'번 신규본');
+    var tag = isLeft ? '<span class="bin-tag left">잔재</span>' : '<span class="bin-tag fresh">신규</span>';
+    var wasteCls = reuse ? 'waste reuse' : 'waste';
+    var wasteTxt = '자투리 '+scrap.toLocaleString()+'mm'+(reuse?' ♻ 재사용':'');
     block.innerHTML =
-      '<div class="bar-title"><b>'+(idx+1)+'번 본</b>'+
-      '<span class="waste'+(reuse?' reuse':'')+'">짜투리 '+scrap.toLocaleString()+'mm'+(reuse?' ♻ 재사용 가능':'')+'</span></div>';
+      '<div class="bar-title"><span class="lbl"><input type="checkbox" class="bar-check"><b>'+titleName+'</b>'+tag+'</span>'+
+      '<span class="'+wasteCls+'">'+wasteTxt+'</span></div>';
 
     var bar = document.createElement('div'); bar.className='bar';
+    bar.style.width = (fullLen/maxFull*100).toFixed(2)+'%';
     sorted.forEach(function(l){
       var seg=document.createElement('div'); seg.className='seg';
-      seg.style.flex = l;
-      seg.style.background = lenColorMap[l];
-      seg.textContent = l;
+      seg.style.flex=l; seg.style.background=lenColorMap[l]; seg.textContent=l;
       bar.appendChild(seg);
     });
     if(scrap>0){
-      var sc=document.createElement('div'); sc.className='seg scrap';
-      sc.style.flex = scrap;
-      if(scrap > res.stockLen*0.06) sc.textContent = scrap;
+      var sc=document.createElement('div'); sc.className='seg scrap'+(reuse?' reuse':'');
+      sc.style.flex=scrap;
+      if(scrap > maxFull*0.06) sc.textContent=scrap;
       bar.appendChild(sc);
     }
-    if(res.endLoss>0){
+    if(!isLeft && res.endLoss>0){
       var el=document.createElement('div'); el.className='seg endloss';
-      el.style.flex = res.endLoss;
-      el.title='끝단 손실 '+res.endLoss+'mm';
+      el.style.flex=res.endLoss; el.title='끝단 손실 '+res.endLoss+'mm';
       bar.appendChild(el);
     }
     block.appendChild(bar);
+
     var cl=document.createElement('div'); cl.className='cut-list'; cl.textContent='✂ '+listTxt;
     block.appendChild(cl);
+
+    // 컷 마킹 위치 (페이싱 끝 기준 누적)
+    var pos=0, marks=[];
+    sorted.forEach(function(l){ pos+=l; marks.push(pos); pos+=res.kerf; });
+    var cp=document.createElement('div'); cp.className='cut-pos';
+    cp.textContent='📍 절단 위치: '+marks.map(function(m){return m.toLocaleString();}).join(' · ')+' mm'
+      + (res.kerf>0?(' (톱날 '+res.kerf+'mm 반영)'):'');
+    block.appendChild(cp);
+
     bars.appendChild(block);
   });
 
-  // 자투리 / 본수 안내
+  // 안내문 + 재사용 버튼
   var note = document.getElementById('leftoverNote');
   var msgs=[];
   if(res.overStock){
-    msgs.push('⚠️ <b style="color:var(--bad)">보유 본수('+res.stockQty+')보다 '+(res.nBars-res.stockQty)+'본 부족</b>합니다. 자재를 추가하거나 수량을 조정하세요.');
+    msgs.push('⚠️ <b style="color:var(--bad)">신규 보유 본수('+res.stockQty+')보다 '+(res.nFresh-res.stockQty)+'본 부족</b>합니다. 자재를 추가하거나 자투리를 더 넣으세요.');
   } else if(res.stockQty!==Infinity){
-    msgs.push('보유 '+res.stockQty+'본 중 <b>'+res.nBars+'본</b> 사용 · '+(res.stockQty-res.nBars)+'본 남음(미절단).');
+    msgs.push('신규 '+res.stockQty+'본 중 <b>'+res.nFresh+'본</b> 사용 · '+(res.stockQty-res.nFresh)+'본 남음(미절단).');
   }
-  var br = [];
-  br.push('절단 짜투리 <b>'+res.cutScrap.toLocaleString()+'mm</b>');
-  if(res.endLoss>0) br.push('끝단 손실 '+res.endLossTotal.toLocaleString()+'mm ('+res.nBars+'본×'+res.endLoss+')');
-  if(res.kerf>0) br.push('톱날 손실 '+res.kerfTotal.toLocaleString()+'mm ('+res.pieceCount+'조각×'+res.kerf+')');
-  msgs.push('한 본 사용 가능 <b>'+res.cap.toLocaleString()+'mm</b> (6,000 − 끝단 '+res.endLoss+'). 손실 합계 = '+br.join(' + '));
+  var loss=[];
+  loss.push('버림 짜투리 <b>'+res.wasteScrap.toLocaleString()+'mm</b>');
+  if(res.endLoss>0) loss.push('끝단 손실 '+res.endLossTotal.toLocaleString()+'mm ('+res.nFresh+'본×'+res.endLoss+')');
+  if(res.kerf>0) loss.push('톱날 손실 '+res.kerfTotal.toLocaleString()+'mm ('+res.pieceCount+'조각×'+res.kerf+')');
+  msgs.push('신규 한 본 사용가능 <b>'+res.freshCap.toLocaleString()+'mm</b> · 신규 자재 효율 <b>'+res.eff.toFixed(1)+'%</b>. 손실 = '+loss.join(' + '));
+  if(res.reuseArr.length){
+    msgs.push('♻ 재사용 가능 자투리: <b style="color:var(--reuse)">'
+      + res.reuseArr.map(function(r){return r.len.toLocaleString()+'mm×'+r.qty;}).join(', ')+'</b>');
+  }
   note.innerHTML = msgs.join('<br>');
+
+  lastReusable = res.reuseArr.slice();
+  document.getElementById('reuseBtn').style.display = res.reuseArr.length?'block':'none';
 }
 
 /* ===== 사용 가능 길이 실시간 표시 ===== */
@@ -457,8 +556,45 @@ function updateUsable(){
 document.getElementById('stockLen').addEventListener('input', updateUsable);
 document.getElementById('endLoss').addEventListener('input', updateUsable);
 
+/* ===== 공유 (URL 인코딩) ===== */
+function currentState(){
+  var cfg = readInputs();
+  return {
+    dia:document.getElementById('dia').value, sch:document.getElementById('sch').value,
+    stockLen:cfg.stockLen, stockQty:document.getElementById('stockQty').value,
+    kerf:cfg.kerf, endLoss:cfg.endLoss, items:cfg.items, leftovers:cfg.leftovers
+  };
+}
+function buildShareURL(){
+  var data = encodeURIComponent(JSON.stringify(currentState()));
+  return location.origin + location.pathname + '#d=' + data;
+}
+function applyState(st){
+  if(!st) return false;
+  try{
+    if(st.dia) document.getElementById('dia').value = st.dia;
+    if(st.sch) document.getElementById('sch').value = st.sch;
+    if(st.stockLen!=null) document.getElementById('stockLen').value = st.stockLen;
+    if(st.stockQty!=null) document.getElementById('stockQty').value = st.stockQty;
+    document.getElementById('kerf').value = st.kerf||0;
+    document.getElementById('endLoss').value = (st.endLoss!=null?st.endLoss:100);
+    document.getElementById('cutRows').innerHTML='';
+    (st.items||[]).forEach(function(it){ addRow(it.len, it.qty); });
+    document.getElementById('loRows').innerHTML='';
+    (st.leftovers||[]).forEach(function(it){ addLo(it.len, it.qty); });
+    syncLoEmpty(); updateUsable();
+    return true;
+  }catch(e){ return false; }
+}
+function parseHashState(){
+  var m = location.hash.match(/[#&]d=([^&]+)/);
+  if(!m) return null;
+  try{ return JSON.parse(decodeURIComponent(m[1])); }catch(e){ return null; }
+}
+
 /* ===== 이벤트 ===== */
 document.getElementById('addRow').onclick=function(){ addRow(); };
+document.getElementById('addLo').onclick=function(){ addLo(); };
 document.getElementById('calcBtn').onclick=function(){
   var cfg = readInputs();
   if(!(cfg.stockLen>0)){
@@ -471,37 +607,50 @@ document.getElementById('calcBtn').onclick=function(){
   if(!res.error) document.getElementById('result').scrollIntoView({behavior:'smooth', block:'start'});
 };
 document.getElementById('printBtn').onclick=function(){ window.print(); };
+document.getElementById('reuseBtn').onclick=function(){
+  if(!lastReusable.length) return;
+  lastReusable.forEach(function(r){ addLo(r.len, r.qty); });
+  var b=document.getElementById('reuseBtn'); var t=b.textContent;
+  b.textContent='✅ 재고에 추가됨'; setTimeout(function(){ b.textContent=t; },1400);
+  document.querySelector('.input-card h2').scrollIntoView({behavior:'smooth'});
+};
+document.getElementById('shareBtn').onclick=function(){
+  var url = buildShareURL();
+  var title='광표반장님 배관 제단 계산';
+  if(navigator.share){
+    navigator.share({title:title, text:title, url:url}).catch(function(){});
+    return;
+  }
+  function ok(){
+    var b=document.getElementById('shareBtn'); var t=b.textContent;
+    b.textContent='✅ 링크 복사됨'; setTimeout(function(){ b.textContent=t; },1400);
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(ok).catch(function(){ prompt('아래 링크를 복사하세요:', url); });
+  }else{ prompt('아래 링크를 복사하세요:', url); }
+};
 document.getElementById('saveBtn').onclick=function(){
-  var cfg = readInputs();
   try{
-    localStorage.setItem(LS_KEY, JSON.stringify({
-      stockLen:cfg.stockLen, stockQty:document.getElementById('stockQty').value,
-      kerf:cfg.kerf, endLoss:cfg.endLoss, items:cfg.items,
-      dia:document.getElementById('dia').value, sch:document.getElementById('sch').value
-    }));
+    localStorage.setItem(LS_KEY, JSON.stringify(currentState()));
     var b=document.getElementById('saveBtn'); var t=b.textContent;
     b.textContent='✅ 저장됨'; setTimeout(function(){ b.textContent=t; },1200);
   }catch(e){ alert('저장 실패: '+e.message); }
 };
 
-/* ===== 초기화 (저장값 or 반장님 예시) ===== */
+/* ===== 초기화 (공유 링크 > 저장값 > 반장님 예시) ===== */
 (function init(){
   fillSelects();
+  var hashSt = parseHashState();
+  if(hashSt && applyState(hashSt)){ return; }
   var saved=null;
   try{ saved = JSON.parse(localStorage.getItem(LS_KEY)); }catch(e){}
   if(saved && saved.items && saved.items.length){
-    if(saved.dia) document.getElementById('dia').value = saved.dia;
-    if(saved.sch) document.getElementById('sch').value = saved.sch;
-    document.getElementById('stockLen').value = saved.stockLen;
-    document.getElementById('stockQty').value = saved.stockQty;
-    document.getElementById('kerf').value = saved.kerf||0;
-    document.getElementById('endLoss').value = (saved.endLoss!=null?saved.endLoss:100);
-    saved.items.forEach(function(it){ addRow(it.len, it.qty); });
+    applyState(saved);
   }else{
     // 반장님이 주신 실제 작업으로 미리 채움
     addRow(3200,1); addRow(3100,2); addRow(1500,6); addRow(1300,5); addRow(1250,7);
+    syncLoEmpty(); updateUsable();
   }
-  updateUsable();
 })();
 
 /* ===== PWA 서비스 워커 등록 (오프라인 + 자동 최신화) ===== */
