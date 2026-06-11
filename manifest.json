@@ -1,0 +1,15 @@
+{
+  "name": "광표반장님 배관 제단 계산기",
+  "short_name": "제단계산기",
+  "description": "SUS 배관을 짜투리 최소로 제단하는 최적화 계산기",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f1419",
+  "theme_color": "#1565c0",
+  "lang": "ko",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

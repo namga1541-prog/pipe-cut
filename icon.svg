@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#1565c0"/>
+  <!-- 파이프 단면들 -->
+  <g transform="translate(256 256)">
+    <rect x="-150" y="-70" width="300" height="44" rx="8" fill="#2196f3"/>
+    <rect x="-150" y="-12" width="200" height="44" rx="8" fill="#43a047"/>
+    <rect x="-150" y="46" width="120" height="44" rx="8" fill="#fb8c00"/>
+    <!-- 절단선 -->
+    <line x1="60" y1="-90" x2="60" y2="110" stroke="#fff" stroke-width="6" stroke-dasharray="14 12" opacity="0.9"/>
+  </g>
+  <text x="256" y="430" font-family="Arial, sans-serif" font-size="76" font-weight="bold" fill="#fff" text-anchor="middle">제단</text>
+</svg>
