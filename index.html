@@ -87,6 +87,21 @@
   .add-btn:active{background:var(--panel2);}
   .lo-empty{font-size:12px; color:var(--sub); margin:2px 0 8px;}
 
+  /* 도면→절단 환산 도구 (접이식) */
+  details.input-card{padding:0; overflow:hidden;}
+  details.input-card>summary{list-style:none; cursor:pointer; padding:16px;
+    font-size:15px; font-weight:700; color:var(--head); display:flex; align-items:center; gap:7px;}
+  details.input-card>summary::-webkit-details-marker{display:none;}
+  details.input-card>summary::after{content:'▸'; margin-left:auto; color:var(--sub); transition:transform .15s;}
+  details.input-card[open]>summary::after{transform:rotate(90deg);}
+  details.input-card[open]>summary{border-bottom:1px solid var(--line);}
+  .tool-body{padding:16px;}
+  .to-in{margin-top:8px; font-size:14px !important; padding:9px 12px !important; color:var(--sub) !important;}
+  .tool-result{margin-top:14px; background:#e7f2ff; border:1px solid #b6d4f5;
+    border-radius:10px; padding:12px 14px; font-size:14px; color:var(--txt);}
+  .tool-result b{font-size:20px; color:var(--accent); margin-left:4px;}
+  .tool-result .calc{display:block; font-size:11.5px; color:var(--sub); margin-top:3px;}
+
   .calc-btn{
     width:100%; background:linear-gradient(135deg,var(--accent2),var(--accent));
     color:#fff; border:none; border-radius:var(--radius); padding:16px;
@@ -215,6 +230,39 @@
     <div class="lo-empty" id="loEmpty">창고에 남은 자투리가 있으면 추가하세요. 신규 본을 자르기 전에 먼저 씁니다.</div>
     <button class="add-btn" id="addLo">＋ 자투리 추가</button>
   </div>
+
+  <details class="card input-card" id="calcTool">
+    <summary class="tool-sum">🧮 도면 → 절단 길이 환산 <span class="opt">(선택 · 펼치기)</span></summary>
+    <div class="tool-body">
+      <p class="note" style="margin:0 0 12px">도면 치수에서 양 끝 부속이 먹는 길이(공제)와 루트 갭을 빼 <b>실제 절단 길이</b>를 냅니다. 구경(①)에 따라 공제 표준값이 자동 입력되며 직접 수정 가능합니다.</p>
+      <label>도면 치수 (mm) — 부속 기준점(중심/면) 사이</label>
+      <input type="number" id="dimLen" inputmode="numeric" placeholder="예: 1500">
+      <div class="row2" style="margin-top:12px">
+        <div>
+          <label>A끝 부속</label>
+          <select id="endA"></select>
+          <input type="number" id="toA" inputmode="numeric" class="to-in" title="공제값(mm) — 수정 가능">
+        </div>
+        <div>
+          <label>B끝 부속</label>
+          <select id="endB"></select>
+          <input type="number" id="toB" inputmode="numeric" class="to-in" title="공제값(mm) — 수정 가능">
+        </div>
+      </div>
+      <div class="row2" style="margin-top:12px">
+        <div>
+          <label>루트 갭 (mm/조인트)</label>
+          <input type="number" id="rootGap" value="0" min="0" inputmode="numeric">
+        </div>
+        <div>
+          <label>수량 (개)</label>
+          <input type="number" id="dimQty" value="1" min="1" inputmode="numeric">
+        </div>
+      </div>
+      <div class="tool-result" id="dimResult">절단 길이 <b>—</b></div>
+      <button class="add-btn" id="dimAdd" style="margin-top:10px">③ 제단 목록에 추가 ↓</button>
+    </div>
+  </details>
 
   <div class="card input-card">
     <h2>③ 필요한 제단 목록</h2>
@@ -655,6 +703,73 @@ document.getElementById('saveBtn').onclick=function(){
   }catch(e){ alert('저장 실패: '+e.message); }
 };
 
+/* ===== 도면 → 절단 길이 환산 =====
+   절단 길이 = 도면 치수 − A공제 − B공제 − 루트갭×(부속 있는 끝 수)
+   공제 표준값: ASME B16.9 버트웰드 부속 중심-면 치수(mm). 현장 수정 가능.
+*/
+var TAKEOUT = {
+  '20A':{el90:29, el45:16, tee:29}, '25A':{el90:38, el45:22, tee:38},
+  '32A':{el90:48, el45:25, tee:48}, '40A':{el90:57, el45:29, tee:57},
+  '50A':{el90:76, el45:35, tee:64}, '65A':{el90:95, el45:44, tee:76},
+  '80A':{el90:114, el45:51, tee:86}, '90A':{el90:133, el45:60, tee:95},
+  '100A':{el90:152, el45:64, tee:105}, '125A':{el90:190, el45:79, tee:124},
+  '150A':{el90:229, el45:95, tee:143}, '200A':{el90:305, el45:127, tee:178}
+};
+var FITTINGS = [
+  {v:'none', t:'없음 (오픈/맞댄)'}, {v:'el90', t:'90° 엘보 (LR)'},
+  {v:'el45', t:'45° 엘보'}, {v:'tee', t:'티 (분기)'},
+  {v:'flange', t:'플랜지 (직접입력)'}, {v:'custom', t:'직접입력'}
+];
+function fillEndSelect(id, def){
+  var s=document.getElementById(id);
+  FITTINGS.forEach(function(f){ var o=document.createElement('option'); o.value=f.v; o.textContent=f.t; s.appendChild(o); });
+  s.value=def;
+}
+function syncTakeout(end){
+  var dia=document.getElementById('dia').value;
+  var sel=document.getElementById('end'+end).value;
+  var inp=document.getElementById('to'+end);
+  if(sel==='none'){ inp.value=0; inp.disabled=true; }
+  else if(sel==='flange' || sel==='custom'){ inp.disabled=false; if(inp.value==='') inp.value=0; }
+  else { inp.disabled=false; var t=(TAKEOUT[dia]||{})[sel]; inp.value=(t!=null?t:0); }
+  computeDim();
+}
+function computeDim(){
+  var box=document.getElementById('dimResult');
+  var dim=parseInt(document.getElementById('dimLen').value,10);
+  if(!(dim>0)){ box.innerHTML='절단 길이 <b>—</b>'; box.dataset.cut=''; return; }
+  var toA=parseInt(document.getElementById('toA').value,10)||0;
+  var toB=parseInt(document.getElementById('toB').value,10)||0;
+  var gap=parseInt(document.getElementById('rootGap').value,10)||0;
+  var joints=(document.getElementById('endA').value!=='none'?1:0)+(document.getElementById('endB').value!=='none'?1:0);
+  var cut=dim - toA - toB - gap*joints;
+  var calcTxt=dim.toLocaleString()+' − '+toA+'(A) − '+toB+'(B)'+(gap*joints?(' − '+(gap*joints)+'(갭)'):'')+' = '+cut.toLocaleString()+'mm';
+  if(cut<=0){
+    box.innerHTML='절단 길이 <b style="color:var(--bad)">'+cut.toLocaleString()+'</b><span class="calc">공제가 치수보다 큽니다 — 값을 확인하세요</span>';
+    box.dataset.cut='';
+  }else{
+    box.innerHTML='절단 길이 <b>'+cut.toLocaleString()+'</b> mm<span class="calc">'+calcTxt+'</span>';
+    box.dataset.cut=cut;
+  }
+}
+fillEndSelect('endA','el90'); fillEndSelect('endB','el90');
+document.getElementById('endA').addEventListener('change', function(){ syncTakeout('A'); });
+document.getElementById('endB').addEventListener('change', function(){ syncTakeout('B'); });
+document.getElementById('dia').addEventListener('change', function(){ syncTakeout('A'); syncTakeout('B'); });
+['dimLen','toA','toB','rootGap'].forEach(function(id){
+  document.getElementById(id).addEventListener('input', computeDim);
+});
+document.getElementById('dimAdd').onclick=function(){
+  var cut=parseInt(document.getElementById('dimResult').dataset.cut,10);
+  var qty=parseInt(document.getElementById('dimQty').value,10)||1;
+  if(!(cut>0)){ document.getElementById('dimResult').classList.add('shake'); return; }
+  addRow(cut, qty);
+  var b=document.getElementById('dimAdd'); var t=b.textContent;
+  b.textContent='✅ 추가됨 ('+cut.toLocaleString()+'mm × '+qty+')'; setTimeout(function(){ b.textContent=t; },1500);
+  document.getElementById('cutRows').lastChild.scrollIntoView({behavior:'smooth', block:'center'});
+};
+syncTakeout('A'); syncTakeout('B');
+
 /* ===== 초기화 (공유 링크 > 저장값 > 반장님 예시) ===== */
 (function init(){
   fillSelects();
@@ -669,6 +784,7 @@ document.getElementById('saveBtn').onclick=function(){
     addRow(3200,1); addRow(3100,2); addRow(1500,6); addRow(1300,5); addRow(1250,7);
     syncLoEmpty(); updateUsable();
   }
+  syncTakeout('A'); syncTakeout('B'); // 구경 채워진 뒤 공제 표준값 반영
 })();
 
 /* ===== PWA 서비스 워커 등록 (오프라인 + 자동 최신화) ===== */
