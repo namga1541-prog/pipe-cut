@@ -1,5 +1,5 @@
 // 서비스 워커 — 네트워크 우선(online=항상 최신, offline=마지막 캐시)
-var CACHE = 'pipe-cut-v4';
+var CACHE = 'pipe-cut-v5';
 var ASSETS = ['./', './index.html', './manifest.json', './icon.svg'];
 
 self.addEventListener('install', function(e){
