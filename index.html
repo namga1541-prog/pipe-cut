@@ -19,12 +19,15 @@
     --radius:14px;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html{-webkit-text-size-adjust:100%; text-size-adjust:100%;}
   html,body{margin:0; padding:0;}
   body{
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Malgun Gothic","맑은 고딕",sans-serif;
     background:var(--bg); color:var(--txt); line-height:1.5;
-    padding:env(safe-area-inset-top) 0 40px;
+    padding:env(safe-area-inset-top) 0 calc(env(safe-area-inset-bottom,0px) + 40px);
+    overscroll-behavior-y:contain; /* 당겨서 새로고침으로 입력 유실 방지 */
   }
+  button{touch-action:manipulation;} /* 더블탭 줌·300ms 지연 제거 */
   header{
     background:linear-gradient(135deg,var(--accent2),var(--accent));
     padding:18px 16px; text-align:center;
@@ -43,9 +46,12 @@
   label{display:block; font-size:12.5px; color:var(--sub); margin-bottom:5px;}
   input[type=number]{
     width:100%; background:var(--panel2); border:1px solid var(--line);
-    color:var(--txt); border-radius:10px; padding:11px 12px; font-size:16px;
+    color:var(--txt); border-radius:10px; padding:13px 12px; font-size:16px;
     outline:none; transition:border-color .15s;
+    -moz-appearance:textfield;
   }
+  input[type=number]::-webkit-outer-spin-button,
+  input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none; margin:0;}
   input[type=number]:focus{border-color:var(--accent);}
   select{
     width:100%; background:var(--panel2); border:1px solid var(--line);
@@ -84,9 +90,12 @@
     width:100%; background:linear-gradient(135deg,var(--accent2),var(--accent));
     color:#fff; border:none; border-radius:var(--radius); padding:16px;
     font-size:17px; font-weight:700; cursor:pointer; margin-top:4px;
-    box-shadow:0 4px 14px rgba(33,150,243,.35);
+    box-shadow:0 4px 14px rgba(33,150,243,.45);
+    position:sticky; bottom:calc(env(safe-area-inset-bottom,0px) + 10px); z-index:5;
   }
   .calc-btn:active{transform:translateY(1px);}
+  body.has-result .calc-btn{position:static; box-shadow:0 4px 14px rgba(33,150,243,.35);}
+  @media print{ .calc-btn{display:none !important;} }
 
   /* 결과 */
   #result{display:none;}
@@ -493,7 +502,8 @@ function render(res, cfg){
     bar.style.width = (fullLen/maxFull*100).toFixed(2)+'%';
     sorted.forEach(function(l){
       var seg=document.createElement('div'); seg.className='seg';
-      seg.style.flex=l; seg.style.background=lenColorMap[l]; seg.textContent=l;
+      seg.style.flex=l; seg.style.background=lenColorMap[l];
+      if(l/fullLen >= 0.09) seg.textContent=l; // 너무 얇은 조각은 숫자 생략(모바일 가독성) — 아래 ✂ 목록에 전부 표기
       bar.appendChild(seg);
     });
     if(scrap>0){
@@ -600,11 +610,18 @@ document.getElementById('calcBtn').onclick=function(){
   if(!(cfg.stockLen>0)){
     document.getElementById('inputErr').innerHTML='<div class="err">⚠️ 원자재 길이를 입력하세요.</div>';
     document.getElementById('result').style.display='none';
+    document.body.classList.remove('has-result');
     return;
   }
   var res = solve(cfg);
   render(res, cfg);
-  if(!res.error) document.getElementById('result').scrollIntoView({behavior:'smooth', block:'start'});
+  if(!res.error){
+    document.body.classList.add('has-result');
+    try{ localStorage.setItem(LS_KEY, JSON.stringify(currentState())); }catch(e){} // 실수 새로고침 대비 자동 저장
+    document.getElementById('result').scrollIntoView({behavior:'smooth', block:'start'});
+  }else{
+    document.body.classList.remove('has-result');
+  }
 };
 document.getElementById('printBtn').onclick=function(){ window.print(); };
 document.getElementById('reuseBtn').onclick=function(){
