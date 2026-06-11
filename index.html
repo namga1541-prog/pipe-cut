@@ -161,6 +161,23 @@
   .reuse-btn{background:#e0f7fa !important; border-color:var(--reuse) !important; color:var(--reuse) !important;
     font-weight:600;}
 
+  /* 저장된 작업 (현장별) */
+  #savesCard h2 .opt{margin-left:auto;}
+  .save-row{display:grid; grid-template-columns:1fr auto auto; gap:8px; align-items:center;
+    background:var(--panel2); border:1px solid var(--line); border-radius:11px;
+    padding:10px 12px; margin-bottom:8px;}
+  .save-row .nm-wrap{min-width:0;}
+  .save-row .nm{font-size:14.5px; font-weight:700; color:var(--txt);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .save-row .meta{font-size:11px; color:var(--sub); margin-top:2px;}
+  .save-row .ld{background:var(--accent); color:#fff; border:none; border-radius:9px;
+    padding:9px 14px; font-size:13px; font-weight:600; cursor:pointer; flex:none;}
+  .save-row .ld:active{background:var(--accent2);}
+  .save-row .dl{background:transparent; border:1px solid var(--line); color:var(--bad);
+    border-radius:9px; width:40px; height:38px; font-size:16px; cursor:pointer; flex:none;}
+  .save-row .dl:active{background:#fdecea;}
+  .saves-empty{font-size:12.5px; color:var(--sub); margin:2px 0 8px;}
+
   @media print{
     body{background:#fff; color:#000; padding:0;}
     header{background:#1565c0 !important; -webkit-print-color-adjust:exact; print-color-adjust:exact;}
@@ -180,6 +197,14 @@
 </header>
 
 <div class="wrap">
+
+  <!-- 저장된 작업 (현장별) -->
+  <div class="card" id="savesCard">
+    <h2>📁 저장된 작업 <span class="opt" id="savesCount"></span></h2>
+    <div id="savesList"></div>
+    <p class="saves-empty" id="savesEmpty">저장된 작업이 없습니다. 입력을 마친 뒤 아래 버튼으로 현장 이름을 붙여 저장하세요.</p>
+    <button class="add-btn" id="saveNamedBtn" style="margin-top:6px">💾 현재 입력을 현장 이름으로 저장</button>
+  </div>
 
   <!-- 입력 -->
   <div class="card input-card">
@@ -287,7 +312,7 @@
       <button id="reuseBtn" class="reuse-btn full" style="display:none">♻ 남은 자투리를 재고에 추가</button>
       <button id="printBtn">🖨️ 인쇄 / PDF</button>
       <button id="shareBtn">🔗 공유 (카톡)</button>
-      <button id="saveBtn" class="full">💾 입력값 저장</button>
+      <button id="saveBtn" class="full">💾 현장 이름으로 저장</button>
     </div>
   </div>
 
@@ -295,7 +320,8 @@
 
 <script>
 /* ===== 상태 ===== */
-var LS_KEY = 'pipeCutCalc.v1';
+var LS_KEY = 'pipeCutCalc.v1';            // 새로고침 대비 자동저장 (1칸)
+var SAVES_KEY = 'pipeCutCalc.saves.v1';   // 현장별 이름저장 (여러 칸)
 var COLORS = ['#2196f3','#43a047','#fb8c00','#ab47bc','#26c6da','#ec407a',
               '#7e57c2','#66bb6a','#ffa726','#5c6bc0','#26a69a','#d4537a'];
 var DIAMETERS = ['20A','25A','32A','40A','50A','65A','80A','90A','100A','125A','150A','200A'];
@@ -651,6 +677,80 @@ function parseHashState(){
   try{ return JSON.parse(decodeURIComponent(m[1])); }catch(e){ return null; }
 }
 
+/* ===== 현장별 이름 저장 / 불러오기 ===== */
+function loadSaves(){
+  try{ var a=JSON.parse(localStorage.getItem(SAVES_KEY)); return Array.isArray(a)?a:[]; }
+  catch(e){ return []; }
+}
+function writeSaves(arr){
+  try{ localStorage.setItem(SAVES_KEY, JSON.stringify(arr)); }catch(e){ alert('저장 실패: '+e.message); }
+}
+function fmtDate(ts){
+  var d=new Date(ts);
+  if(isNaN(d.getTime())) return '';
+  return (d.getMonth()+1)+'/'+d.getDate();
+}
+function saveNamed(){
+  var st = currentState();
+  if(!st.items || !st.items.length){ alert('저장할 제단 목록이 없습니다. 먼저 항목을 입력하세요.'); return; }
+  var saves = loadSaves();
+  var def = (st.dia||'') + ' 현장';
+  var name = prompt('현장/작업 이름을 입력하세요\n(예: 온양사업장 3차, 화성 배관 1동)', def);
+  if(name==null) return;            // 취소
+  name = name.trim();
+  if(!name){ alert('이름을 입력해야 저장됩니다.'); return; }
+  var entry = { name:name, ts:Date.now(), dia:st.dia, items:st.items.length, state:st };
+  var idx = saves.findIndex(function(s){ return s.name===name; });
+  if(idx>=0){
+    if(!confirm('"'+name+'" 이름이 이미 있습니다. 덮어쓸까요?')) return;
+    saves[idx] = entry;
+  }else{
+    saves.unshift(entry);
+  }
+  writeSaves(saves);
+  renderSaves();
+  flash(document.getElementById('saveNamedBtn'), '✅ "'+name+'" 저장됨', '💾 현재 입력을 현장 이름으로 저장');
+  var rb=document.getElementById('saveBtn'); if(rb){ var rt='💾 현장 이름으로 저장'; rb.textContent='✅ 저장됨'; setTimeout(function(){ rb.textContent=rt; },1200); }
+}
+function loadSave(name){
+  var s = loadSaves().find(function(x){ return x.name===name; });
+  if(!s){ renderSaves(); return; }
+  if(applyState(s.state)){
+    document.querySelector('.input-card h2').scrollIntoView({behavior:'smooth', block:'start'});
+    syncTakeout('A'); syncTakeout('B');
+  }
+}
+function deleteSave(name){
+  if(!confirm('"'+name+'" 저장을 삭제할까요?')) return;
+  writeSaves(loadSaves().filter(function(x){ return x.name!==name; }));
+  renderSaves();
+}
+function flash(btn, msg, restore){
+  if(!btn) return; btn.textContent=msg; setTimeout(function(){ btn.textContent=restore; }, 1400);
+}
+function esc(s){ return String(s).replace(/[&<>"]/g, function(c){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+function renderSaves(){
+  var saves = loadSaves();
+  var list = document.getElementById('savesList');
+  var empty = document.getElementById('savesEmpty');
+  var count = document.getElementById('savesCount');
+  count.textContent = saves.length ? saves.length+'건' : '';
+  if(!saves.length){ list.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+  list.innerHTML = saves.map(function(s){
+    var meta = [s.dia||'', (s.items||0)+'건', fmtDate(s.ts)].filter(Boolean).join(' · ');
+    var n = esc(s.name);
+    return '<div class="save-row">'
+         +   '<div class="nm-wrap"><div class="nm">'+n+'</div><div class="meta">'+meta+'</div></div>'
+         +   '<button class="ld" data-name="'+n+'">불러오기</button>'
+         +   '<button class="dl" data-name="'+n+'" title="삭제">🗑</button>'
+         + '</div>';
+  }).join('');
+  list.querySelectorAll('.ld').forEach(function(b){ b.onclick=function(){ loadSave(b.getAttribute('data-name')); }; });
+  list.querySelectorAll('.dl').forEach(function(b){ b.onclick=function(){ deleteSave(b.getAttribute('data-name')); }; });
+}
+
 /* ===== 이벤트 ===== */
 document.getElementById('addRow').onclick=function(){ addRow(); };
 document.getElementById('addLo').onclick=function(){ addLo(); };
@@ -695,13 +795,8 @@ document.getElementById('shareBtn').onclick=function(){
     navigator.clipboard.writeText(url).then(ok).catch(function(){ prompt('아래 링크를 복사하세요:', url); });
   }else{ prompt('아래 링크를 복사하세요:', url); }
 };
-document.getElementById('saveBtn').onclick=function(){
-  try{
-    localStorage.setItem(LS_KEY, JSON.stringify(currentState()));
-    var b=document.getElementById('saveBtn'); var t=b.textContent;
-    b.textContent='✅ 저장됨'; setTimeout(function(){ b.textContent=t; },1200);
-  }catch(e){ alert('저장 실패: '+e.message); }
-};
+document.getElementById('saveBtn').onclick = saveNamed;
+document.getElementById('saveNamedBtn').onclick = saveNamed;
 
 /* ===== 도면 → 절단 길이 환산 =====
    절단 길이 = 도면 치수 − A공제 − B공제 − 루트갭×(부속 있는 끝 수)
@@ -773,6 +868,7 @@ syncTakeout('A'); syncTakeout('B');
 /* ===== 초기화 (공유 링크 > 저장값 > 반장님 예시) ===== */
 (function init(){
   fillSelects();
+  renderSaves();
   var hashSt = parseHashState();
   if(hashSt && applyState(hashSt)){ return; }
   var saved=null;
